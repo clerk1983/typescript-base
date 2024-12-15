@@ -1,41 +1,43 @@
-export interface IAuditManager {
-  addRecord(visitorName: string, timeOfVisit: Date): void;
-}
+import { FileContent } from './file-content';
+import { FileUpdate } from './file-update';
 
-import path from 'path';
-import { IFileSystem } from './file-system';
+export interface IAuditManager {
+  addRecord(
+    files: FileContent[],
+    visitorName: string,
+    timeOfVisit: Date
+  ): FileUpdate;
+}
 
 const FILE_NAME = 'audit_';
 
 export class AuditManager implements IAuditManager {
-  constructor(
-    private readonly _maxEntriesProfile: number,
-    private readonly _directoryName: string,
-    private readonly _fileSystem: IFileSystem
-  ) {}
-  addRecord(visitorName: string, timeOfVisit: Date): void {
-    const filePaths: string[] = this._fileSystem.getFiles(this._directoryName);
-    filePaths.sort((a, b) => a.localeCompare(b));
+  constructor(private readonly _maxEntriesProfile: number) {}
+
+  addRecord(
+    files: FileContent[],
+    visitorName: string,
+    timeOfVisit: Date
+  ): FileUpdate {
+    files.sort((a, b) => a.fileName.localeCompare(b.fileName));
 
     const newRecord = `${visitorName};${timeOfVisit}\n`;
 
-    if (filePaths.length === 0) {
-      const newFile = path.join(this._directoryName, this.genFileName(0));
-      this._fileSystem.appendText(newFile, newRecord);
-      return;
+    if (files.length === 0) {
+      return new FileUpdate(this.genFileName(0), newRecord);
     }
-    const targetPath = filePaths[filePaths.length - 1];
-    const rowNum = this._fileSystem.readAllLines.length;
+    const currentFile: FileContent = files[files.length - 1];
+    const lines = currentFile.lines;
+    const rowNum = lines.length;
     if (rowNum < this._maxEntriesProfile) {
-      this._fileSystem.appendText(targetPath, newRecord);
+      lines.push(newRecord);
+      const newContent = lines.join('\n');
+      return new FileUpdate(currentFile.fileName, newContent);
     } else {
-      const idx = this.myIndex(path.basename(targetPath));
+      const idx = this.myIndex(currentFile.fileName);
       const nextIdx = Number(idx) + 1;
-      const newFile = this.genFileName(nextIdx);
-      this._fileSystem.appendText(
-        path.join(this._directoryName, newFile),
-        newRecord
-      );
+      const newFileName = this.genFileName(nextIdx);
+      return new FileUpdate(newFileName, newRecord);
     }
   }
 
