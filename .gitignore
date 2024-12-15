@@ -143,4 +143,4 @@ dist
 
 # End of https://www.toptal.com/developers/gitignore/api/node
 
-./src/chap6/audits/
+audit.*.txt
