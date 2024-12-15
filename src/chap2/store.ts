@@ -1,7 +1,13 @@
 export type Product = 'Shampoo' | 'Book';
 
-export class Store {
-  private inventory: Stock[] = [];
+export interface IStore {
+  addInventory(product: Product, num: number): void;
+  purchase(product: Product, num: number): boolean;
+  getInventory(product: Product): number;
+}
+
+export class Store implements IStore {
+  private inventory: IStock[] = [];
 
   constructor() {}
 
@@ -29,11 +35,19 @@ export class Store {
   }
 }
 
-class Stock {
+export interface IStock {
+  stock: number;
+  product: Product;
+  addStock(num: number): IStock;
+  canDispatch(num: number): boolean;
+  dispatchStock(num: number): IStock;
+}
+
+class Stock implements IStock {
   private _stock = 0;
   constructor(public product: Product) {}
 
-  addStock(num: number): Stock {
+  addStock(num: number): IStock {
     this._stock += num;
     return this;
   }
@@ -42,21 +56,12 @@ class Stock {
     return this._stock >= num;
   }
 
-  dispatchStock(num: number): Stock {
+  dispatchStock(num: number): IStock {
     this._stock -= num;
     return this;
   }
 
   get stock(): number {
     return this._stock;
-  }
-}
-
-export class Customer {
-  constructor() {}
-
-  purchase(store: Store, product: Product, num: number): boolean {
-    const isSuccess = store.purchase(product, num);
-    return isSuccess;
   }
 }
